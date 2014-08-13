@@ -15,6 +15,10 @@ category:	Network
 synopsis:	SASL implementation using simple-pipe
 description:
 
+extra-source-files:
+    examples/client.hs
+    examples/server.hs
+
 source-repository	head
     type:	git
     location:	git://github.com/YoshikuniJujo/sasl.git

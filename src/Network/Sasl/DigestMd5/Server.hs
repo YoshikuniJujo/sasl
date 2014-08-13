@@ -3,6 +3,8 @@
 module Network.Sasl.DigestMd5.Server (server, digestMd5Sv, Success(..)) where
 
 import "monads-tf" Control.Monad.State
+import "monads-tf" Control.Monad.Error
+import "monads-tf" Control.Monad.Error.Class
 
 import qualified Data.ByteString as BS
 
@@ -10,19 +12,24 @@ import Network.Sasl.DigestMd5.DigestMd5
 import Network.Sasl.DigestMd5.Papillon
 import Network.Sasl
 
-digestMd5Sv :: (MonadState m, SaslState (StateType m)) => Server m
+digestMd5Sv :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) => Server m
 -- digestMd5Sv = Server Nothing (zip server client) (Just $ return "")
 digestMd5Sv = Server Nothing (zip svs cls) (Just mkRspAuth)
 
-svs :: (MonadState m, SaslState (StateType m)) => [Send m]
-svs = [mkChallenge, mkRspAuth, mkResult]
+svs :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) => [Send m]
+svs = [mkChallenge]
 
 cls :: (MonadState m, SaslState (StateType m)) => [Receive m]
 cls = [putResponse]
 -- client = [putResponse, \"" -> return ()]
 
-mkChallenge, mkRspAuth, mkResult ::
-	(MonadState m, SaslState (StateType m)) => Send m
+mkChallenge, mkRspAuth, mkResult :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m)) => Send m
 mkChallenge = do
 	st <- gets getSaslState
 	let	Just rlm = lookup "realm" st
@@ -50,7 +57,7 @@ mkRspAuth = do
 		Just rsp = lookup "response" st
 		clc = digestMd5 True un rlm ps q uri n nc cn
 		clcs = digestMd5 False un rlm ps q uri n nc cn
-	unless (clc == rsp) $ error "mkRspAuth: bad"
+	unless (clc == rsp) . throwError $ strMsg "not authenticated"
 	return $ "rspauth=" `BS.append` clcs
 
 mkResult = return "success"
@@ -60,7 +67,7 @@ putResponse bs = do
 	st <- gets getSaslState
 	let	Just rs = parseAtts bs
 		Just rlm = lookup "realm" rs
-		Just n = lookup "nonce" rs
+--		Just n = lookup "nonce" rs
 		Just q = lookup "qop" rs
 		Just c = lookup "charset" rs
 		Just un = lookup "username" rs
@@ -70,7 +77,7 @@ putResponse bs = do
 		Just rsp = lookup "response" rs
 	modify . putSaslState $ [
 		("realm", rlm),
-		("nonce", n),
+--		("nonce", n),
 		("qop", q),
 		("charset", c),
 		("username", un),

@@ -16,7 +16,7 @@ cls :: (MonadState m, SaslState (StateType m)) => [Send m]
 cls = [mkResponse]
 
 svs :: (MonadState m, SaslState (StateType m)) => [Receive m]
-svs = [putReceive, const $ return ()]
+svs = [putReceive]
 
 mkResponse :: (MonadState m, SaslState (StateType m)) => Send m
 mkResponse = do
@@ -27,23 +27,23 @@ mkResponse = do
 		Just q = lookup "qop" st
 		Just c = lookup "charset" st
 		Just un = lookup "username" st
-		uri = "xmpp/localhost"
-		cn = "00DEADBEEF00"
-		nc = "00000001"
+		Just uri = lookup "uri" st
+		Just cn = lookup "cnonce" st
+		Just nc = lookup "nc" st
 	modify $ putSaslState $ [
 		("username", un),
 		("digest-uri", uri),
 		("nc", nc),
 		("cnonce", cn) ] ++ st
 	return . fromDigestResponse $ DR {
-		drUserName = "yoshikuni",
+		drUserName = un,
 		drRealm = rlm,
 		drPassword = ps,
-		drCnonce = "00DEADBEEF00",
+		drCnonce = cn,
 		drNonce = n,
-		drNc = "00000001",
+		drNc = nc,
 		drQop = q,
-		drDigestUri = "xmpp/localhost",
+		drDigestUri = uri,
 		drCharset = c }
 
 putReceive :: (MonadState m, SaslState (StateType m)) => Receive m
