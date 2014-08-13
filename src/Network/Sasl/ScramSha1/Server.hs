@@ -36,6 +36,7 @@ serverFirst = do
 	return sfm
 
 dropProof :: String -> String
+dropProof "" = ""
 dropProof (',' : 'p' : '=' : _) = ""
 dropProof (c : cs) = c : dropProof cs
 
@@ -54,15 +55,11 @@ clientFinal rs = do
 serverFinal :: (MonadState m, SaslState (StateType m)) => Send m
 serverFinal = do
 	st <- gets getSaslState
-	let	Just un = lookup "username" st
-		Just ps = lookup "password" st
+	let	Just ps = lookup "password" st
 		Just slt = lookup "salt" st
 		Just i = lookup "i" st
-		cb = "n,,"
-		Just cnnc = lookup "cnonce" st
-		Just nnc = lookup "nonce" st
 		Just cfmb = lookup "client-first-message-bare" st
 		Just sfm = lookup "server-first-message" st
 		Just cfmwop = lookup "client-final-message-without-proof" st
 		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
-	return $ serverFinalMessage un ps slt (read $ BSC.unpack i) cb cnnc nnc
+	return $ serverFinalMessage am ps slt (read $ BSC.unpack i)

@@ -14,11 +14,11 @@ module Network.Sasl.ScramSha1.ScramSha1 (
 
 --	exampleFlow,
 	exampleServerFirstMessage,
-	exampleServerFinalMessage,
+--	exampleServerFinalMessage,
 	exampleProof,
 	exampleSignature,
 --	exampleClientProof,
-	exampleServerSignature,
+--	exampleServerSignature,
 	) where
 
 import Control.Applicative
@@ -29,6 +29,17 @@ import qualified Data.ByteString.Base64 as B64
 
 import Network.Sasl.ScramSha1.Fields
 import Network.Sasl.ScramSha1.Functions
+
+clientFirstMessageBare :: BS.ByteString -> BS.ByteString -> BS.ByteString
+clientFirstMessageBare un nnc = BS.concat ["n=", un, ",r=", nnc]
+
+serverFirstMessage :: BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
+serverFirstMessage snnc slt i = BS.concat
+	["r=", snnc, ",s=", B64.encode slt, ",i=", BSC.pack $ show i]
+
+clientFinalMessageWithoutProof :: BS.ByteString -> BS.ByteString -> BS.ByteString
+clientFinalMessageWithoutProof cb snnc =
+	BS.concat ["c=", B64.encode cb, ",r=", snnc]
 
 {-
 clientFirstMessage :: BS.ByteString -> BS.ByteString -> BS.ByteString
@@ -68,10 +79,10 @@ readServerFirstMessage ch = do
 readServerFinalMessage :: BS.ByteString -> Maybe BS.ByteString
 readServerFinalMessage = lookup "v" . readFields
 
-serverFinalMessage :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Int
-	-> BS.ByteString -> BS.ByteString -> BS.ByteString -> BS.ByteString
-serverFinalMessage un ps slt i cb cnnc snnc = BS.concat
-	["v=", serverSignature un ps slt i cb cnnc snnc]
+serverFinalMessage ::
+	BS.ByteString -> BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
+serverFinalMessage am ps slt i =
+	BS.concat ["v=", serverSignature am ps slt i]
 
 {-
 testFlow :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Int
@@ -87,10 +98,12 @@ exampleServerFirstMessage :: BS.ByteString
 exampleServerFirstMessage =
 	serverFirstMessage exampleServerNonce exampleSalt exampleI
 
+{-
 exampleServerFinalMessage :: BS.ByteString
 exampleServerFinalMessage = serverFinalMessage
 	"user" "pencil" exampleSalt exampleI "n,,"
 	exampleClientNonce exampleServerNonce
+	-}
 
 {-
 exampleFlow :: BS.ByteString
@@ -104,10 +117,12 @@ exampleClientProof = B64.encode $ clientProof
 	"n,," exampleClientNonce exampleServerNonce
 	-}
 
+{-
 exampleServerSignature :: BS.ByteString
 exampleServerSignature = B64.encode $ serverSignature
 	"user" "pencil" exampleSalt exampleI
 	"n,," exampleClientNonce exampleServerNonce
+	-}
 
 exampleClientNonce :: BS.ByteString
 exampleClientNonce = "fyko+d2lbbFgONRv9qkxdawL"

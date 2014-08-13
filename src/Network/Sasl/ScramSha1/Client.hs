@@ -4,13 +4,17 @@ module Network.Sasl.ScramSha1.Client (Client(..), scramSha1Client) where
 
 import "monads-tf" Control.Monad.State
 import "monads-tf" Control.Monad.Error
+import "monads-tf" Control.Monad.Error.Class
 
 import Network.Sasl
 import Network.Sasl.ScramSha1.ScramSha1
 
 import qualified Data.ByteString.Char8 as BSC
 
-scramSha1Client :: (MonadState m, SaslState (StateType m), MonadError m) => Client m
+scramSha1Client :: (
+		MonadState m, SaslState (StateType m),
+		MonadError m, Error (ErrorType m)
+	) => Client m
 scramSha1Client =
 	Client (Just clientFirst) [(serverFirst, clientFinal)] (Just serverFinal)
 
@@ -45,21 +49,25 @@ clientFinal = do
 		Just sfm = lookup "server-first-message" st
 		cfmwop = clientFinalMessageWithoutProof cb nonce
 		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
+	modify . putSaslState $ ("client-final-message-without-proof", cfmwop) : st
 	return $ cfmwop `BSC.append` ",p="
 		`BSC.append` clientProof am ps slt (read $ BSC.unpack i)
 
-serverFinal :: (MonadState m, SaslState (StateType m)) => Receive m
+serverFinal :: (
+		MonadState m, SaslState (StateType m),
+		MonadError m, Error (ErrorType m)
+	) => Receive m
 serverFinal ch = do
 	let Just v = readServerFinalMessage ch
 	st <- gets getSaslState
-	let	Just un = lookup "username" st
-		Just ps = lookup "password" st
+	let	Just ps = lookup "password" st
 		Just slt = lookup "salt" st
 		Just i = lookup "i" st
-		cb = "n,,"
-		Just cnnc = lookup "cnonce" st
-		Just nnc = lookup "nonce" st
-		sfm = serverFinalMessage un ps slt (read $ BSC.unpack i) cb cnnc nnc
-	let Just v' = readServerFinalMessage sfm
-	unless (v == v') $ error "serverFinal: bad"
+		Just cfmb = lookup "client-first-message-bare" st
+		Just sfm = lookup "server-first-message" st
+		Just cfmwop = lookup "client-final-message-without-proof" st
+		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
+		sfnm = serverFinalMessage am ps slt (read $ BSC.unpack i)
+	let Just v' = readServerFinalMessage sfnm
+	unless (v == v') . throwError $ strMsg "serverFinal: bad"
 	modify . putSaslState $ [("verify", v), ("sfm", sfm)] ++ st
