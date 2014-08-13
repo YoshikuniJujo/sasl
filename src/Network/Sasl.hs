@@ -20,7 +20,7 @@ data Client m = Client (Maybe (Send m)) [(Receive m, Send m)] (Maybe (Receive m)
 type Send m = m BS.ByteString
 type Receive m = BS.ByteString -> m ()
 
-data Success = Success (Maybe BS.ByteString)
+data Success = Success (Maybe BS.ByteString) deriving Show
 
 server :: Monad m =>
 	Server m -> (Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ())
@@ -49,7 +49,7 @@ pipeCl_ (Client _ [] (Just rcv)) = await >>= \mi -> case mi of
 	Just (Left (Success (Just d))) -> lift $ rcv d
 	Just (Right d) -> lift (rcv d) >> yield "" >> await >>= \mi' -> case mi' of
 		Just (Left (Success Nothing)) -> return ()
-		_ -> error "pipeCl_: bad"
+		_ -> error $ "pipeCl_: " ++ show mi'
 	_ -> return ()
 pipeCl_ (Client _ [] _) = await >> return ()
 pipeCl_ (Client _ ((rcv, send) : rss) rcv') = await >>= \mbs -> case mbs of
