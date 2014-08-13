@@ -2,7 +2,7 @@
 
 module Network.Sasl.DigestMd5.DigestMd5 (
 	DigestResponse(..), fromDigestResponse,
-	digestMd5,
+	mkStored, digestMd5,
 
 	DigestMd5Challenge(..), fromDigestMd5Challenge,
 ) where
@@ -26,13 +26,15 @@ hex2 w = replicate (2 - length s) '0' ++ s
 	where
 	s = showHex w ""
 
-digestMd5 :: Bool -> ByteString -> ByteString -> ByteString -> ByteString -> ByteString
-	-> ByteString -> ByteString -> ByteString -> ByteString
-digestMd5 isClient username rlm password q uri n nc cnonce = z
+mkStored :: ByteString -> ByteString -> ByteString -> ByteString
+mkStored username rlm password =
+	hash $ username +++ ":" +++ rlm +++ ":" +++ password
+
+digestMd5 :: Bool -> ByteString -> ByteString -> ByteString ->
+	ByteString -> ByteString -> ByteString -> ByteString
+digestMd5 isClient y q uri n nc cnonce = z
 	where
-	x = username +++ ":" +++ rlm +++ ":" +++ password
-	y = hash x
-	a1 = y +++ ":" +++ n +++ ":" +++ cnonce -- +++ ":" +++ authzid
+	a1 = y +++ ":" +++ n +++ ":" +++ cnonce
 	ha1 = hash32 a1
 	a2 = (if isClient then "AUTHENTICATE" else "") +++ ":" +++ uri
 	ha2 = hash32 a2
@@ -79,7 +81,8 @@ quote = (`BS.append` "\"") . ("\"" `BS.append`)
 
 calcMd5 :: Bool -> DigestResponse -> BS.ByteString
 calcMd5 isClient = digestMd5 isClient
-	<$> drUserName <*> drRealm <*> drPassword <*> drQop <*> drDigestUri
+	<$> (mkStored <$> drUserName <*> drRealm <*> drPassword)
+	<*> drQop <*> drDigestUri
 	<*> drNonce <*> drNc <*> drCnonce
 
 data DigestMd5Challenge = DigestMd5Challenge {

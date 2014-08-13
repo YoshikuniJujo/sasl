@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, PackageImports, FlexibleContexts #-}
 
-module Network.Sasl.DigestMd5.Server (server, digestMd5Sv, Success(..)) where
+module Network.Sasl.DigestMd5.Server (Success(..), digestMd5Sv, mkStored) where
 
 import "monads-tf" Control.Monad.State
 import "monads-tf" Control.Monad.Error
@@ -25,7 +25,6 @@ svs = [mkChallenge]
 
 cls :: (MonadState m, SaslState (StateType m)) => [Receive m]
 cls = [putResponse]
--- client = [putResponse, \"" -> return ()]
 
 mkChallenge :: (
 	MonadState m, SaslState (StateType m),
@@ -52,17 +51,15 @@ mkRspAuth :: (
 mkRspAuth lu = do
 	st <- gets getSaslState
 	let	Just un = lookup "username" st
-		Just rlm = lookup "realm" st
-		ps = lu un
---		Just ps = lookup "password" st
+		stored = lu un
 		Just q = lookup "qop" st
 		Just uri = lookup "digest-uri" st
 		Just n = lookup "nonce" st
 		Just nc = lookup "nc" st
 		Just cn = lookup "cnonce" st
 		Just rsp = lookup "response" st
-		clc = digestMd5 True un rlm ps q uri n nc cn
-		clcs = digestMd5 False un rlm ps q uri n nc cn
+		clc = digestMd5 True stored q uri n nc cn
+		clcs = digestMd5 False stored q uri n nc cn
 	unless (clc == rsp) . throwError $ strMsg "not authenticated"
 	return $ "rspauth=" `BS.append` clcs
 
