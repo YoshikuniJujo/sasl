@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings, PackageImports #-}
 
 module Network.Sasl.ScramSha1.ScramSha1 (
-	clientFirstMessage,
+	clientFirstMessageBare,
 	serverFirstMessage,
-	clientFinalMessage,
+	clientFinalMessageWithoutProof,
+	clientProof,
 	serverFinalMessage,
 
 	readClientFirstMessage,
@@ -11,12 +12,12 @@ module Network.Sasl.ScramSha1.ScramSha1 (
 	readClientFinalMessage,
 	readServerFinalMessage,
 
-	exampleFlow,
+--	exampleFlow,
 	exampleServerFirstMessage,
 	exampleServerFinalMessage,
 	exampleProof,
 	exampleSignature,
-	exampleClientProof,
+--	exampleClientProof,
 	exampleServerSignature,
 	) where
 
@@ -29,8 +30,10 @@ import qualified Data.ByteString.Base64 as B64
 import Network.Sasl.ScramSha1.Fields
 import Network.Sasl.ScramSha1.Functions
 
+{-
 clientFirstMessage :: BS.ByteString -> BS.ByteString -> BS.ByteString
 clientFirstMessage un nnc = "n,," `BS.append` clientFirstMessageBare un nnc
+-}
 
 readClientFirstMessage :: BS.ByteString -> Maybe (BS.ByteString, BS.ByteString)
 readClientFirstMessage rs = case BS.splitAt 3 rs of
@@ -39,11 +42,13 @@ readClientFirstMessage rs = case BS.splitAt 3 rs of
 		(,) <$> lookup "n" kv <*> lookup "r" kv
 	_ -> Nothing
 
+{-
 clientFinalMessage :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Int
 	-> BS.ByteString -> BS.ByteString -> BS.ByteString -> BS.ByteString
 clientFinalMessage un ps slt i cb cnnc snnc = BS.concat [
 	clientFinalMessageWithoutProof cb snnc, ",",
 	"p=", clientProof un ps slt i cb cnnc snnc ]
+	-}
 
 readClientFinalMessage ::
  	BS.ByteString -> Maybe (BS.ByteString, BS.ByteString, BS.ByteString)
@@ -68,6 +73,7 @@ serverFinalMessage :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Int
 serverFinalMessage un ps slt i cb cnnc snnc = BS.concat
 	["v=", serverSignature un ps slt i cb cnnc snnc]
 
+{-
 testFlow :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Int
 	-> BS.ByteString -> BS.ByteString -> BS.ByteString -> BS.ByteString
 testFlow un ps slt i cb cnnc snnc = BS.concat [
@@ -75,6 +81,7 @@ testFlow un ps slt i cb cnnc snnc = BS.concat [
 	"S: ", serverFirstMessage snnc slt i, "\n",
 	"C: ", clientFinalMessage un ps slt i cb cnnc snnc, "\n",
 	"S: ", serverFinalMessage un ps slt i cb cnnc snnc, "\n" ]
+	-}
 
 exampleServerFirstMessage :: BS.ByteString
 exampleServerFirstMessage =
@@ -85,6 +92,7 @@ exampleServerFinalMessage = serverFinalMessage
 	"user" "pencil" exampleSalt exampleI "n,,"
 	exampleClientNonce exampleServerNonce
 
+{-
 exampleFlow :: BS.ByteString
 exampleFlow = testFlow
 	"user" "pencil" exampleSalt exampleI
@@ -94,6 +102,7 @@ exampleClientProof :: BS.ByteString
 exampleClientProof = B64.encode $ clientProof
 	"user" "pencil" exampleSalt exampleI
 	"n,," exampleClientNonce exampleServerNonce
+	-}
 
 exampleServerSignature :: BS.ByteString
 exampleServerSignature = B64.encode $ serverSignature

@@ -19,6 +19,7 @@ clientFirst rs = do
 	let Just (un, cnnc) = readClientFirstMessage rs
 	st <- gets getSaslState
 	modify . putSaslState $ [
+		("client-first-message-bare", BSC.drop 3 rs),
 		("username", un),
 		("cnonce", cnnc) ] ++ st
 
@@ -29,14 +30,24 @@ serverFirst = do
 		Just snnc = lookup "snonce" st
 		Just slt = lookup "salt" st
 		Just i = lookup "i" st
-	return $ serverFirstMessage
-		(cnnc `BSC.append` snnc) slt (read $ BSC.unpack i)
+		sfm = serverFirstMessage
+			(cnnc `BSC.append` snnc) slt (read $ BSC.unpack i)
+	modify . putSaslState $ ("server-first-message", sfm) : st
+	return sfm
+
+dropProof :: String -> String
+dropProof (',' : 'p' : '=' : _) = ""
+dropProof (c : cs) = c : dropProof cs
+
+dropProofBS :: BSC.ByteString -> BSC.ByteString
+dropProofBS = BSC.pack . dropProof . BSC.unpack
 
 clientFinal :: (MonadState m, SaslState (StateType m)) => Receive m
 clientFinal rs = do
 	let Just ("n,,", nnc, prf) = readClientFinalMessage rs
 	st <- gets getSaslState
 	modify . putSaslState $ [
+		("client-final-message-without-proof", dropProofBS rs),
 		("nonce", nnc),
 		("proof", prf) ] ++ st
 
@@ -50,4 +61,8 @@ serverFinal = do
 		cb = "n,,"
 		Just cnnc = lookup "cnonce" st
 		Just nnc = lookup "nonce" st
+		Just cfmb = lookup "client-first-message-bare" st
+		Just sfm = lookup "server-first-message" st
+		Just cfmwop = lookup "client-final-message-without-proof" st
+		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
 	return $ serverFinalMessage un ps slt (read $ BSC.unpack i) cb cnnc nnc

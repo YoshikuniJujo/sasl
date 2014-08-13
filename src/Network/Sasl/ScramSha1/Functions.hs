@@ -59,15 +59,14 @@ authMessage cb un cnnc snnc slt i = BS.concat [
 	serverFirstMessage snnc slt i, ",",
 	clientFinalMessageWithoutProof cb snnc ]
 
-clientSignature :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Int
-	-> BS.ByteString -> BS.ByteString -> BS.ByteString -> BS.ByteString
-clientSignature un ps slt i cb cnnc snnc =
-	hmac SHA1.hash 64 (storedKey ps slt i) (authMessage cb un cnnc snnc slt i)
+clientSignature ::
+	BS.ByteString -> BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
+clientSignature am ps slt i = hmac SHA1.hash 64 (storedKey ps slt i) am
 
-clientProof :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Int
-	-> BS.ByteString -> BS.ByteString -> BS.ByteString -> BS.ByteString
-clientProof un ps slt i cb cnnc snnc = B64.encode $
-	clientKey ps slt i `xo` clientSignature un ps slt i cb cnnc snnc
+clientProof ::
+	BS.ByteString -> BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
+clientProof am ps slt i =
+	B64.encode $ clientKey ps slt i `xo` clientSignature am ps slt i
 
 serverKey :: BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
 serverKey ps salt i = hmac SHA1.hash 64 (saltedPassword ps salt i) "Server Key"
