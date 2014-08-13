@@ -14,9 +14,9 @@ import Network.Sasl
 
 digestMd5Sv :: (
 	MonadState m, SaslState (StateType m),
-	MonadError m, Error (ErrorType m) ) => Server m
--- digestMd5Sv = Server Nothing (zip server client) (Just $ return "")
-digestMd5Sv = Server Nothing (zip svs cls) (Just mkRspAuth)
+	MonadError m, Error (ErrorType m) ) =>
+	(BS.ByteString -> BS.ByteString) -> Server m
+digestMd5Sv lu = Server Nothing (zip svs cls) (Just $ mkRspAuth lu)
 
 svs :: (
 	MonadState m, SaslState (StateType m),
@@ -27,7 +27,7 @@ cls :: (MonadState m, SaslState (StateType m)) => [Receive m]
 cls = [putResponse]
 -- client = [putResponse, \"" -> return ()]
 
-mkChallenge, mkRspAuth, mkResult :: (
+mkChallenge :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m)) => Send m
 mkChallenge = do
@@ -44,11 +44,17 @@ mkChallenge = do
 		charset = c,
 		algorithm = a }
 
-mkRspAuth = do
+
+mkRspAuth :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m)) =>
+	(BS.ByteString -> BS.ByteString) -> Send m
+mkRspAuth lu = do
 	st <- gets getSaslState
 	let	Just un = lookup "username" st
 		Just rlm = lookup "realm" st
-		Just ps = lookup "password" st
+		ps = lu un
+--		Just ps = lookup "password" st
 		Just q = lookup "qop" st
 		Just uri = lookup "digest-uri" st
 		Just n = lookup "nonce" st
@@ -59,8 +65,6 @@ mkRspAuth = do
 		clcs = digestMd5 False un rlm ps q uri n nc cn
 	unless (clc == rsp) . throwError $ strMsg "not authenticated"
 	return $ "rspauth=" `BS.append` clcs
-
-mkResult = return "success"
 
 putResponse :: (MonadState m, SaslState (StateType m)) => Receive m
 putResponse bs = do

@@ -20,10 +20,9 @@ clientFile = "examples/digestMd5cl.txt"
 
 main :: IO ()
 main = do
-	let (_, p) = server digestMd5Sv
+	let (_, p) = server $ digestMd5Sv (\"yoshikuni" -> "password")
 	r <- runPipe (fromFileLn clientFile =$= p =$= output =$= toHandleLn stdout)
 		`runStateT` St [
-			("password", "password"),
 			("realm", "localhost"),
 			("nonce", "7658cddf-0e44-4de2-87df-41323bce97f4"),
 			("qop", "auth"),
