@@ -4,7 +4,7 @@ module Network.Sasl.ScramSha1.ScramSha1 (
 	clientFirstMessageBare,
 	serverFirstMessage,
 	clientFinalMessageWithoutProof,
-	clientProof, clientKey, saltedPassword,
+	clientProof, clientKey, serverKey, saltedPassword,
 	serverFinalMessage,
 
 	readClientFirstMessage,
@@ -33,11 +33,9 @@ clientFinalMessageWithoutProof :: BS.ByteString -> BS.ByteString -> BS.ByteStrin
 clientFinalMessageWithoutProof cb snnc =
 	BS.concat ["c=", B64.encode cb, ",r=", snnc]
 
-serverFinalMessage ::
-	BS.ByteString -> BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
-serverFinalMessage am ps slt i = BS.concat [
-	"v=",
-	serverSignature (saltedPassword ps slt i) am ]
+serverFinalMessage :: BS.ByteString -> BS.ByteString -> BS.ByteString
+serverFinalMessage sk am = BS.concat ["v=", serverSignature sk am]
+--	serverSignature (serverKey $ saltedPassword ps slt i) am ]
 
 readClientFirstMessage :: BS.ByteString -> Maybe (BS.ByteString, BS.ByteString)
 readClientFirstMessage rs = case BS.splitAt 3 rs of

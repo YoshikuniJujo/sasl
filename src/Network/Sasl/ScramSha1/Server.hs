@@ -62,4 +62,6 @@ serverFinal = do
 		Just sfm = lookup "server-first-message" st
 		Just cfmwop = lookup "client-final-message-without-proof" st
 		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
-	return $ serverFinalMessage am ps slt (read $ BSC.unpack i)
+	return $ serverFinalMessage
+		(serverKey . saltedPassword ps slt . read $ BSC.unpack i)
+		am

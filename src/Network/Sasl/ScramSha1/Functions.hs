@@ -49,4 +49,4 @@ serverKey :: BS.ByteString -> BS.ByteString
 serverKey sp = hmac SHA1.hash 64 sp "Server Key"
 
 serverSignature :: BS.ByteString -> BS.ByteString -> BS.ByteString
-serverSignature sp am = B64.encode $ hmac SHA1.hash 64 (serverKey sp) am
+serverSignature sk am = B64.encode $ hmac SHA1.hash 64 sk am
