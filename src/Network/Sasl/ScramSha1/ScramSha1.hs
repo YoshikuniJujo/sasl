@@ -4,13 +4,14 @@ module Network.Sasl.ScramSha1.ScramSha1 (
 	clientFirstMessageBare,
 	serverFirstMessage,
 	clientFinalMessageWithoutProof,
-	clientProof, clientKey, serverKey, saltedPassword,
 	serverFinalMessage,
 
 	readClientFirstMessage,
 	readServerFirstMessage,
 	readClientFinalMessage,
 	readServerFinalMessage,
+
+	saltedPassword, clientKey, storedKey, serverKey, clientProof,
 	) where
 
 import Control.Applicative
