@@ -1,0 +1,41 @@
+build-type:	Simple
+cabal-version:	>= 1.8
+
+name:		sasl
+version:	0.0.0.0
+stability:	Experimental
+author:		Yoshikuni Jujo <PAF01143@nifty.ne.jp>
+maintainer:	Yoshikuni Jujo <PAF01143@nifty.ne.jp>
+homepage:	https://github.com/YoshikuniJujo/sasl/wiki
+
+license:	BSD3
+license-file:	LICENSE
+
+category:	Network
+synopsis:	SASL implementation using simple-pipe
+description:
+
+source-repository	head
+    type:	git
+    location:	git://github.com/YoshikuniJujo/sasl.git
+
+source-repository	this
+    type:	git
+    location:	git://github.com/YoshikuniJujo/sasl.git
+    tag:	sasl-0.0.0.0
+
+library
+    hs-source-dirs:	src
+    exposed-modules:
+        Network.Sasl,
+        Network.Sasl.DigestMd5.Client, Network.Sasl.DigestMd5.Server,
+        Network.Sasl.ScramSha1.Client, Network.Sasl.ScramSha1.Server
+    other-modules:
+        Network.Sasl.DigestMd5.DigestMd5, Network.Sasl.DigestMd5.Papillon,
+        Network.Sasl.ScramSha1.Fields, Network.Sasl.ScramSha1.Hmac,
+        Network.Sasl.ScramSha1.ScramSha1
+    build-depends:
+        base == 4.*, bytestring == 0.10.*, simple-pipe == 0.0.0.*,
+        papillon == 0.1.*, cryptohash == 0.11.*, base64-bytestring == 1.0.*,
+        monads-tf == 0.1.*
+    ghc-options:	-Wall

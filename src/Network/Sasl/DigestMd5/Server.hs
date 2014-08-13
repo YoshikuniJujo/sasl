@@ -7,7 +7,7 @@ import "monads-tf" Control.Monad.State
 import qualified Data.ByteString as BS
 
 import Network.Sasl.DigestMd5.DigestMd5
-import Papillon
+import Network.Sasl.DigestMd5.Papillon
 import Network.Sasl
 
 digestMd5Sv :: (MonadState m, SaslState (StateType m)) => Server m

@@ -6,7 +6,7 @@ import "monads-tf" Control.Monad.State
 
 import Network.Sasl
 import Network.Sasl.DigestMd5.DigestMd5
-import Papillon
+import Network.Sasl.DigestMd5.Papillon
 
 digestMd5Cl :: (MonadState m, SaslState (StateType m)) => Client m
 digestMd5Cl = Client Nothing (zip svs cls) (Just . const $ return ()) -- Nothing
