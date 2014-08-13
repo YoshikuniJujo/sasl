@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings, PackageImports #-}
 
 module Network.Sasl.ScramSha1.Functions (
-	storedKey,
+	saltedPassword,
 	clientKey,
+	storedKey,
 	serverKey,
+
 	clientProof,
 	serverSignature,
 	) where
@@ -31,24 +33,20 @@ hi str salt i =
 saltedPassword :: BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
 saltedPassword = hi
 
-clientKey :: BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
-clientKey ps salt i = hmac SHA1.hash 64 (saltedPassword ps salt i) "Client Key"
+clientKey :: BS.ByteString -> BS.ByteString
+clientKey sp = hmac SHA1.hash 64 sp "Client Key"
 
-storedKey :: BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
-storedKey ps salt i = SHA1.hash $ clientKey ps salt i
+storedKey :: BS.ByteString -> BS.ByteString
+storedKey = SHA1.hash . clientKey
 
-clientSignature ::
-	BS.ByteString -> BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
-clientSignature am ps slt i = hmac SHA1.hash 64 (storedKey ps slt i) am
+clientSignature :: BS.ByteString -> BS.ByteString -> BS.ByteString
+clientSignature sk am = hmac SHA1.hash 64 sk am
 
-clientProof ::
-	BS.ByteString -> BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
-clientProof am ps slt i =
-	B64.encode $ clientKey ps slt i `xo` clientSignature am ps slt i
+clientProof :: BS.ByteString -> BS.ByteString -> BS.ByteString
+clientProof ck am = B64.encode $ ck `xo` clientSignature (SHA1.hash ck) am
 
-serverKey :: BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
-serverKey ps salt i = hmac SHA1.hash 64 (saltedPassword ps salt i) "Server Key"
+serverKey :: BS.ByteString -> BS.ByteString
+serverKey sp = hmac SHA1.hash 64 sp "Server Key"
 
-serverSignature ::
-	BS.ByteString -> BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
-serverSignature am ps slt i = B64.encode $ hmac SHA1.hash 64 (serverKey ps slt i) am
+serverSignature :: BS.ByteString -> BS.ByteString -> BS.ByteString
+serverSignature sp am = B64.encode $ hmac SHA1.hash 64 (serverKey sp) am

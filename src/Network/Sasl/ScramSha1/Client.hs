@@ -51,7 +51,9 @@ clientFinal = do
 		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
 	modify . putSaslState $ ("client-final-message-without-proof", cfmwop) : st
 	return $ cfmwop `BSC.append` ",p="
-		`BSC.append` clientProof am ps slt (read $ BSC.unpack i)
+		`BSC.append` clientProof
+			(clientKey $ saltedPassword ps slt . read $ BSC.unpack i)
+			am
 
 serverFinal :: (
 		MonadState m, SaslState (StateType m),
