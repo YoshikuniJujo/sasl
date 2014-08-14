@@ -16,7 +16,7 @@ import Network.Sasl.DigestMd5.Papillon
 sasl :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m) ) =>
-	(BS.ByteString -> BS.ByteString) -> (
+	(BS.ByteString -> m BS.ByteString) -> (
 		BS.ByteString,
 		(Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ()) )
 sasl rt = ("DIGEST-MD5", server $ digestMd5Sv rt)
@@ -24,7 +24,7 @@ sasl rt = ("DIGEST-MD5", server $ digestMd5Sv rt)
 digestMd5Sv :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m) ) =>
-	(BS.ByteString -> BS.ByteString) -> Server m
+	(BS.ByteString -> m BS.ByteString) -> Server m
 digestMd5Sv lu = Server Nothing (zip svs cls) (Just $ mkRspAuth lu)
 
 svs :: (
@@ -56,12 +56,12 @@ mkChallenge = do
 mkRspAuth :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m)) =>
-	(BS.ByteString -> BS.ByteString) -> Send m
+	(BS.ByteString -> m BS.ByteString) -> Send m
 mkRspAuth lu = do
 	st <- gets getSaslState
 	let	Just un = lookup "username" st
-		stored = lu un
-		Just q = lookup "qop" st
+	stored <- lu un
+	let	Just q = lookup "qop" st
 		Just uri = lookup "digest-uri" st
 		Just n = lookup "nonce" st
 		Just nc = lookup "nc" st

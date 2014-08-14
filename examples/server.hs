@@ -20,7 +20,7 @@ clientFile = "examples/digestMd5cl.txt"
 
 main :: IO ()
 main = do
-	let (_, (_, p)) = sasl $ \"yoshikuni" ->
+	let (_, (_, p)) = sasl $ \"yoshikuni" -> return $
 		mkStored "yoshikuni" "localhost" "password"
 	r <- runPipe (fromFileLn clientFile =$= p =$= output =$= toHandleLn stdout)
 		`runStateT` St [

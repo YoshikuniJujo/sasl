@@ -16,7 +16,7 @@ import Network.Sasl.ScramSha1.ScramSha1
 sasl :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m) ) =>
-	(BS.ByteString -> (BS.ByteString, BS.ByteString, BS.ByteString, Int)) -> (
+	(BS.ByteString -> m (BS.ByteString, BS.ByteString, BS.ByteString, Int)) -> (
 		BSC.ByteString,
 		(Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ()) )
 sasl rt = ("SCRAM-SHA-1", server $ scramSha1Server rt)
@@ -28,7 +28,7 @@ salt ps slt i = (storedKey sp, serverKey sp)
 scramSha1Server :: (
 		MonadState m, SaslState (StateType m),
 		MonadError m, Error (ErrorType m) ) =>
-	(BSC.ByteString -> (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
+	(BSC.ByteString -> m (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
 		-> Server m
 scramSha1Server rt = Server
 	(Just clientFirst) [(serverFirst, clientFinal rt)] (Just $ serverFinal rt)
@@ -65,14 +65,14 @@ dropProofBS = BSC.pack . dropProof . BSC.unpack
 clientFinal :: (
 		MonadState m, SaslState (StateType m),
 		MonadError m, Error (ErrorType m) ) =>
-	(BSC.ByteString -> (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
+	(BSC.ByteString -> m (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
 		-> Receive m
 clientFinal rt rs = do
 	st <- gets getSaslState
 	let	Just ("n,,", nnc, prf) = readClientFinalMessage rs
 		Just un = lookup "username" st
-		(_, sk, _, _) = rt un
-		Just cfmb = lookup "client-first-message-bare" st
+	(_, sk, _, _) <- rt un
+	let	Just cfmb = lookup "client-first-message-bare" st
 		Just sfm = lookup "server-first-message" st
 		cfmwop = dropProofBS rs
 		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
@@ -89,13 +89,13 @@ clientFinal rt rs = do
 		] ++ st
 
 serverFinal :: (MonadState m, SaslState (StateType m)) =>
-	(BSC.ByteString -> (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
+	(BSC.ByteString -> m (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
 		-> Send m
 serverFinal rt = do
 	st <- gets getSaslState
 	let	Just un = lookup "username" st
-		(_, _, sk, _) = rt un
-		Just cfmb = lookup "client-first-message-bare" st
+	(_, _, sk, _) <- rt un
+	let	Just cfmb = lookup "client-first-message-bare" st
 		Just sfm = lookup "server-first-message" st
 		Just cfmwop = lookup "client-final-message-without-proof" st
 		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
