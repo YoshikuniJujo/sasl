@@ -33,6 +33,7 @@ library
     exposed-modules:
         Network.Sasl,
         Network.Sasl.Plain.Client, Network.Sasl.Plain.Server,
+        Network.Sasl.External.Client, Network.Sasl.External.Server,
         Network.Sasl.DigestMd5.Client, Network.Sasl.DigestMd5.Server,
         Network.Sasl.ScramSha1.Client, Network.Sasl.ScramSha1.Server
     other-modules:
