@@ -15,7 +15,7 @@ import Network.Sasl
 sasl :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m) ) =>
-	(BS.ByteString -> BS.ByteString -> m BS.ByteString) -> (
+	(BS.ByteString -> BS.ByteString -> BS.ByteString -> m Bool) -> (
 		BS.ByteString,
 		(Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ()) )
 sasl rt = ("PLAIN", server $ script rt)
@@ -29,18 +29,16 @@ readResponse rs = (az, ac, ps)
 script :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m) ) =>
-	(BS.ByteString -> BS.ByteString -> m BS.ByteString) -> Server m
-script rt =
---	Server (Just $ clientMessage rt) [] (Just $ return "")
-	Server (Just $ clientMessage rt) [] Nothing
+	(BS.ByteString -> BS.ByteString -> BS.ByteString -> m Bool) -> Server m
+script rt = Server (Just $ clientMessage rt) [] Nothing
 
 clientMessage :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, Error (ErrorType m) ) =>
-	(BS.ByteString -> BS.ByteString -> m BS.ByteString) -> Receive m
+	(BS.ByteString -> BS.ByteString -> BS.ByteString -> m Bool) -> Receive m
 clientMessage rt rs = do
 	let (az, ac, ps) = readResponse rs
-	ps' <- rt az ac
-	unless (ps' == ps) . throwError $ strMsg "not authenticate"
+	ok <- rt az ac ps
+	unless ok . throwError $ strMsg "not authenticate"
 	st <- gets getSaslState
 	modify . putSaslState $ ("username", ac) : st

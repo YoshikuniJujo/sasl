@@ -20,10 +20,14 @@ clientFile = "examples/plainCl.txt"
 
 main :: IO ()
 main = do
-	let (_, (_, p)) = sasl $ \"" "yoshikuni" -> return "password"
+	let (_, (_, p)) = sasl $ \"" "yoshikuni" "password" -> return True
 	r <- runPipe (fromFileLn clientFile =$= p =$= output =$= toHandleLn stdout)
 		`runStateT` St []
 	print r
+
+check :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Bool
+check "" "yoshikuni" "password" = True
+check _ _ _ = False
 
 output :: Pipe (Either Success BS.ByteString) BS.ByteString (StateT St IO) ()
 output = await >>= \mch -> case mch of
