@@ -1,11 +1,14 @@
 {-# LANGUAGE OverloadedStrings, PackageImports #-}
 
 module Network.Sasl.ScramSha1.Functions (
+	xo, SHA1.hash,
+
 	saltedPassword,
 	clientKey,
 	storedKey,
 	serverKey,
 
+	clientSignature,
 	clientProof,
 	serverSignature,
 	) where

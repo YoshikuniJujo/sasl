@@ -11,7 +11,9 @@ module Network.Sasl.ScramSha1.ScramSha1 (
 	readClientFinalMessage,
 	readServerFinalMessage,
 
-	saltedPassword, clientKey, storedKey, serverKey, clientProof,
+	xo, hash,
+	saltedPassword, clientKey, storedKey, serverKey,
+	clientSignature, clientProof,
 	) where
 
 import Control.Applicative

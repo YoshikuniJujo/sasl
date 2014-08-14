@@ -3,6 +3,8 @@
 module Network.Sasl.ScramSha1.Server (salt, scramSha1Server) where
 
 import "monads-tf" Control.Monad.State
+import "monads-tf" Control.Monad.Error
+import "monads-tf" Control.Monad.Error.Class
 
 import qualified Data.ByteString.Char8 as BSC
 
@@ -13,11 +15,13 @@ salt :: BSC.ByteString -> BSC.ByteString -> Int -> (BSC.ByteString, BSC.ByteStri
 salt ps slt i = (storedKey sp, serverKey sp)
 	where sp = saltedPassword ps slt i
 
-scramSha1Server :: (MonadState m, SaslState (StateType m)) =>
+scramSha1Server :: (
+		MonadState m, SaslState (StateType m),
+		MonadError m, Error (ErrorType m) ) =>
 	(BSC.ByteString -> (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
 		-> Server m
 scramSha1Server rt = Server
-	(Just clientFirst) [(serverFirst, clientFinal)] (Just $ serverFinal rt)
+	(Just clientFirst) [(serverFirst, clientFinal rt)] (Just $ serverFinal rt)
 
 clientFirst :: (MonadState m, SaslState (StateType m)) => Receive m
 clientFirst rs = do
@@ -48,14 +52,31 @@ dropProof (c : cs) = c : dropProof cs
 dropProofBS :: BSC.ByteString -> BSC.ByteString
 dropProofBS = BSC.pack . dropProof . BSC.unpack
 
-clientFinal :: (MonadState m, SaslState (StateType m)) => Receive m
-clientFinal rs = do
-	let Just ("n,,", nnc, prf) = readClientFinalMessage rs
+clientFinal :: (
+		MonadState m, SaslState (StateType m),
+		MonadError m, Error (ErrorType m) ) =>
+	(BSC.ByteString -> (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
+		-> Receive m
+clientFinal rt rs = do
 	st <- gets getSaslState
+	let	Just ("n,,", nnc, prf) = readClientFinalMessage rs
+		Just un = lookup "username" st
+		(_, sk, _, _) = rt un
+		Just cfmb = lookup "client-first-message-bare" st
+		Just sfm = lookup "server-first-message" st
+		cfmwop = dropProofBS rs
+		am = BSC.concat [cfmb, ",", sfm, ",", cfmwop]
+		cs = clientSignature sk am
+		ck = prf `xo` cs
+		sk' = hash ck
+	unless (sk == sk') . throwError $ strMsg "clientFinal: bad"
 	modify . putSaslState $ [
-		("client-final-message-without-proof", dropProofBS rs),
+		("client-final-message-without-proof", cfmwop),
 		("nonce", nnc),
-		("proof", prf) ] ++ st
+		("proof", prf),
+		("StoredKey", sk),
+		("StoredKey'", sk')
+		] ++ st
 
 serverFinal :: (MonadState m, SaslState (StateType m)) =>
 	(BSC.ByteString -> (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
