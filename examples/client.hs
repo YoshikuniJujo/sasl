@@ -20,7 +20,7 @@ serverFile = "examples/digestMd5sv.txt"
 
 main :: IO ()
 main = do
-	let (_, p) = client digestMd5Cl
+	let (_, (_, p)) = sasl
 	r <- runPipe (fromFileLn serverFile =$= input =$= p =$= toHandleLn stdout)
 		`runStateT` St [
 			("username", "yoshikuni"),

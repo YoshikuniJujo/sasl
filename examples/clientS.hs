@@ -20,7 +20,7 @@ serverFile = "examples/scramSha1sv.txt"
 
 main :: IO ()
 main = do
-	let	(_, p) = client scramSha1Client
+	let	(_, (_, p)) = sasl
 		sp = saltedPassword "password" "pepper" 4492
 	r <- runPipe (fromFileLn serverFile =$= input =$= p =$= toHandleLn stdout)
 		`runStateT` St [

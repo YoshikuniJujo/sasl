@@ -1,14 +1,28 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts, PackageImports #-}
 
-module Network.Sasl.DigestMd5.Client (SaslState(..), client, digestMd5Cl) where
+module Network.Sasl.DigestMd5.Client (sasl) where
 
 import "monads-tf" Control.Monad.State
+import "monads-tf" Control.Monad.Error
+import Data.Pipe
 
 import Network.Sasl
 import Network.Sasl.DigestMd5.DigestMd5
 import Network.Sasl.DigestMd5.Papillon
 
-digestMd5Cl :: (MonadState m, SaslState (StateType m)) => Client m
+import qualified Data.ByteString as BS
+
+sasl :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) => (
+	BS.ByteString,
+	(Bool, Pipe (Either Success BS.ByteString) BS.ByteString m ()) )
+sasl = ("DIGEST-MD5", client digestMd5Cl)
+
+
+digestMd5Cl :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) => Client m
 digestMd5Cl = Client Nothing (zip svs cls) (Just . const $ return ()) -- Nothing
 
 cls :: (MonadState m, SaslState (StateType m)) => [Send m]

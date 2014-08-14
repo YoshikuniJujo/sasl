@@ -1,23 +1,28 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts, PackageImports #-}
 
 module Network.Sasl.ScramSha1.Client (
-	Client(..), scramSha1Client,
-	saltedPassword, clientKey, serverKey,
-	) where
+	sasl, saltedPassword, clientKey, serverKey ) where
 
 import "monads-tf" Control.Monad.State
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.Error.Class
+import Data.Pipe
 
 import Network.Sasl
 import Network.Sasl.ScramSha1.ScramSha1
 
 import qualified Data.ByteString.Char8 as BSC
 
+sasl :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) => (
+	BSC.ByteString,
+	(Bool, Pipe (Either Success BSC.ByteString) BSC.ByteString m ()) )
+sasl = ("SCRAM-SHA-1", client scramSha1Client)
+
 scramSha1Client :: (
-		MonadState m, SaslState (StateType m),
-		MonadError m, Error (ErrorType m)
-	) => Client m
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) => Client m
 scramSha1Client =
 	Client (Just clientFirst) [(serverFirst, clientFinal)] (Just serverFinal)
 
