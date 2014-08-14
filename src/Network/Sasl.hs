@@ -31,7 +31,7 @@ pipeSv_ :: Monad m =>
 pipeSv_ (Server (Just rcv) srs send') = await >>=
 	maybe (return ()) ((>> pipeSv_ (Server Nothing srs send')) . lift . rcv)
 pipeSv_ (Server _ [] (Just send')) = lift send' >>= yield . Left . Success . Just
-pipeSv_ (Server _ [] _) = return ()
+pipeSv_ (Server _ [] _) = yield . Left $ Success Nothing
 pipeSv_ (Server _ ((send, rcv) : srs) send') = do
 	lift send >>= yield . Right
 	await >>= maybe (return ())
