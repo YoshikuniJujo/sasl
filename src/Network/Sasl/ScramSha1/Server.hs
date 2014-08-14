@@ -1,15 +1,25 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts, PackageImports #-}
 
-module Network.Sasl.ScramSha1.Server (salt, scramSha1Server) where
+module Network.Sasl.ScramSha1.Server (sasl, salt) where
 
 import "monads-tf" Control.Monad.State
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.Error.Class
+import Data.Pipe
 
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
 
 import Network.Sasl
 import Network.Sasl.ScramSha1.ScramSha1
+
+sasl :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) =>
+	(BS.ByteString -> (BS.ByteString, BS.ByteString, BS.ByteString, Int)) -> (
+		BSC.ByteString,
+		(Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ()) )
+sasl rt = ("SCRAM-SHA-1", server $ scramSha1Server rt)
 
 salt :: BSC.ByteString -> BSC.ByteString -> Int -> (BSC.ByteString, BSC.ByteString)
 salt ps slt i = (storedKey sp, serverKey sp)

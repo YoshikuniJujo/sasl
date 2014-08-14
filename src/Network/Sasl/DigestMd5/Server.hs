@@ -1,16 +1,25 @@
 {-# LANGUAGE OverloadedStrings, PackageImports, FlexibleContexts #-}
 
-module Network.Sasl.DigestMd5.Server (Success(..), digestMd5Sv, mkStored) where
+module Network.Sasl.DigestMd5.Server (Success(..), sasl, mkStored) where
 
 import "monads-tf" Control.Monad.State
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.Error.Class
+import Data.Pipe
 
 import qualified Data.ByteString as BS
 
+import Network.Sasl
 import Network.Sasl.DigestMd5.DigestMd5
 import Network.Sasl.DigestMd5.Papillon
-import Network.Sasl
+
+sasl :: (
+	MonadState m, SaslState (StateType m),
+	MonadError m, Error (ErrorType m) ) =>
+	(BS.ByteString -> BS.ByteString) -> (
+		BS.ByteString,
+		(Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ()) )
+sasl rt = ("DIGEST-MD5", server $ digestMd5Sv rt)
 
 digestMd5Sv :: (
 	MonadState m, SaslState (StateType m),

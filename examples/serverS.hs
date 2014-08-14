@@ -23,8 +23,7 @@ main = do
 	let	slt = "pepper"
 		i = 4492
 		(stk, svk) = salt "password" slt i
-		(_, p) = server . scramSha1Server $
-			\"yoshikuni" -> (slt, stk, svk, i)
+		(_, (_, p)) = sasl $ \"yoshikuni" -> (slt, stk, svk, i)
 	r <- runPipe (fromFileLn clientFile =$= p =$= output =$= toHandleLn stdout)
 		`runStateT` St [
 			("snonce", "7658cddf-0e44-4de2-87df-4132bce97f4"),
