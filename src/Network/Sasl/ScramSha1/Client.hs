@@ -3,6 +3,7 @@
 module Network.Sasl.ScramSha1.Client (
 	sasl, saltedPassword, clientKey, serverKey ) where
 
+import Control.Applicative
 import "monads-tf" Control.Monad.State
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.Error.Class
@@ -52,9 +53,12 @@ clientFinal = do
 			Just c -> Just c
 			_ -> case lookup "SaltedPassword" st of
 				Just sp -> Just $ clientKey sp
+				_ -> do	(ps, slt, i) <- psslti st
+				{-
 				_ -> do	ps <- lookup "password" st
 					slt <- lookup "salt" st
 					i <- lookup "i" st
+					-}
 					return . clientKey . saltedPassword ps slt
 						. read $ BSC.unpack i
 		cb = "n,,"
@@ -69,6 +73,10 @@ clientFinal = do
 --			(clientKey $ saltedPassword ps slt . read $ BSC.unpack i)
 --			am
 
+psslti :: [(BSC.ByteString, BSC.ByteString)] ->
+	Maybe (BSC.ByteString, BSC.ByteString, BSC.ByteString)
+psslti st = (,,) <$> lookup "password" st <*> lookup "salt" st <*> lookup "i" st
+
 serverFinal :: (
 		MonadState m, SaslState (StateType m),
 		MonadError m, Error (ErrorType m)
@@ -80,9 +88,12 @@ serverFinal ch = do
 			Just s -> Just s
 			_ -> case lookup "SaltedPassword" st of
 				Just sp -> Just $ serverKey sp
+				_ -> do	(ps, slt, i) <- psslti st
+				{-
 				_ -> do	ps <- lookup "password" st
 					slt <- lookup "salt" st
 					i <- lookup "i" st
+					-}
 					return . serverKey . saltedPassword ps slt
 						. read $ BSC.unpack i
 		Just cfmb = lookup "client-first-message-bare" st

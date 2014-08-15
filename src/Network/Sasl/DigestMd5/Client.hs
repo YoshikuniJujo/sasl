@@ -44,7 +44,7 @@ mkResponse = do
 		Just uri = lookup "uri" st
 		Just cn = lookup "cnonce" st
 		Just nc = lookup "nc" st
-	modify $ putSaslState $ [
+	modify . putSaslState $ [
 		("username", un),
 		("digest-uri", uri),
 		("nc", nc),
@@ -69,7 +69,7 @@ putReceive bs = do
 		Just q = lookup "qop" ch
 		Just c = lookup "charset" ch
 		Just a = lookup "algorithm" ch
-	modify $ putSaslState $ [
+	modify . putSaslState $ [
 		("realm", rlm),
 		("nonce", n),
 		("qop", q),

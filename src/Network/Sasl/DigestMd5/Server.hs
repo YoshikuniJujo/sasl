@@ -47,7 +47,7 @@ mkChallenge = do
 		Just q = lookup "qop" st
 		Just c = lookup "charset" st
 		Just a = lookup "algorithm" st
-	return $ fromDigestMd5Challenge $ DigestMd5Challenge {
+	return $ fromDigestMd5Challenge DigestMd5Challenge {
 		realm = rlm,
 		nonce = n,
 		qop = q,

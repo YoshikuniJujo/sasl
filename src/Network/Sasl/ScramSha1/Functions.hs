@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, PackageImports #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Sasl.ScramSha1.Functions (
 	xo, SHA1.hash,
@@ -43,7 +43,7 @@ storedKey :: BS.ByteString -> BS.ByteString
 storedKey = SHA1.hash . clientKey
 
 clientSignature :: BS.ByteString -> BS.ByteString -> BS.ByteString
-clientSignature sk am = hmac SHA1.hash 64 sk am
+clientSignature = hmac SHA1.hash 64
 
 clientProof :: BS.ByteString -> BS.ByteString -> BS.ByteString
 clientProof ck am = B64.encode $ ck `xo` clientSignature (SHA1.hash ck) am

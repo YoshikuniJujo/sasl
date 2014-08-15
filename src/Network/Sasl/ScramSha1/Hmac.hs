@@ -30,4 +30,4 @@ makePad iop = BS.pack . mkp iop . BS.unpack
 	mkp _ _ = error "makePad: bad"
 
 bsToHex :: BS.ByteString -> String
-bsToHex = concatMap (flip showHex "") . BS.unpack
+bsToHex = concatMap (`showHex` "") . BS.unpack

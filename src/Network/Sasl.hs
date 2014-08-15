@@ -65,6 +65,9 @@ client :: Monad m => Client m -> (Bool,
 	Pipe (Either Success BS.ByteString) BS.ByteString m ())
 client c@(Client i _ _) = (isJust i, pipeCl_ c)
 
+voidM :: Monad m => m a -> m ()
+voidM = (>> return ())
+
 pipeCl_ :: Monad m =>
 	Client m -> Pipe (Either Success BS.ByteString) BS.ByteString m ()
 pipeCl_ (Client (Just i) rss rcv') =
@@ -75,7 +78,7 @@ pipeCl_ (Client _ [] (Just rcv)) = await >>= \mi -> case mi of
 		Just (Left (Success Nothing)) -> return ()
 		_ -> error $ "pipeCl_: " ++ show mi'
 	_ -> return ()
-pipeCl_ (Client _ [] _) = await >> return ()
+pipeCl_ (Client _ [] _) = voidM await
 pipeCl_ (Client _ ((rcv, send) : rss) rcv') = await >>= \mbs -> case mbs of
 	Just (Right bs) -> lift (rcv bs) >> lift send >>= yield >>
 		pipeCl_ (Client Nothing rss rcv')

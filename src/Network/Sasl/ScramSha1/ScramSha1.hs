@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, PackageImports #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Network.Sasl.ScramSha1.ScramSha1 (
 	clientFirstMessageBare,
