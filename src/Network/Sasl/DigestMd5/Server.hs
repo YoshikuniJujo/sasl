@@ -15,15 +15,6 @@ import Network.Sasl
 import Network.Sasl.DigestMd5.DigestMd5
 import Network.Sasl.DigestMd5.Papillon
 
-data SaslErrorType = SaslErrorOther BS.ByteString
-	deriving Show
-
-class Error e => SaslError e where
-	fromSaslError :: (SaslErrorType, BS.ByteString) -> e
-
-instance SaslError IOError where
-	fromSaslError = strMsg . show
-
 sasl :: (
 	MonadState m, SaslState (StateType m),
 	MonadError m, SaslError (ErrorType m) ) =>

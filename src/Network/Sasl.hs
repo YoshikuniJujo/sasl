@@ -1,10 +1,12 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts, TupleSections, PackageImports #-}
+{-# LANGUAGE OverloadedStrings, TupleSections,
+ 	FlexibleContexts, TypeSynonymInstances, PackageImports #-}
 
 module Network.Sasl (
-	SaslState(..), Send, Receive, Success(..),
+	SaslState(..), Send, Receive, Success(..), SaslError(..), SaslErrorType(..),
 	Client(..), client, Server(..), server ) where
 
-import "monads-tf" Control.Monad.Trans
+import "monads-tf" Control.Monad.Error
+import "monads-tf" Control.Monad.Error.Class
 import Data.Maybe
 import Data.Pipe
 
@@ -21,6 +23,27 @@ type Send m = m BS.ByteString
 type Receive m = BS.ByteString -> m ()
 
 data Success = Success (Maybe BS.ByteString) deriving Show
+
+data SaslErrorType
+	= Aborted
+	| AccountDisabled
+	| CredentialExpired
+	| EncryptionRequired
+	| IncorrectEncoding
+	| InvalidAuthzid
+	| InvalidMechanism
+	| MalformedRequest
+	| MechanismTooWeak
+	| NotAuthorized
+	| TemporaryAuthFailure
+	| SaslErrorType BS.ByteString
+	deriving Show
+
+class Error e => SaslError e where
+	fromSaslError :: (SaslErrorType, BS.ByteString) -> e
+
+instance SaslError IOError where
+	fromSaslError = strMsg . show
 
 server :: Monad m =>
 	Server m -> (Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ())

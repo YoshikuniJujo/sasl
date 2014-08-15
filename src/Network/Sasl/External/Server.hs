@@ -13,7 +13,7 @@ import Network.Sasl
 
 sasl :: (
 	MonadState m, SaslState (StateType m),
-	MonadError m, Error (ErrorType m) ) =>
+	MonadError m, SaslError (ErrorType m) ) =>
 	(BS.ByteString -> m Bool) -> (
 		BS.ByteString,
 		(Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ()) )
