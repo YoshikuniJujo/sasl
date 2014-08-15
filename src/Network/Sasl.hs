@@ -2,8 +2,12 @@
  	FlexibleContexts, TypeSynonymInstances, PackageImports #-}
 
 module Network.Sasl (
-	SaslState(..), Send, Receive, Success(..), SaslError(..), SaslErrorType(..),
-	Client(..), client, Server(..), server ) where
+	-- * Main
+	Client(..), client, Server(..), server, Success(..),
+	-- * Types and Classes
+	SaslState(..), Send, Receive,
+	-- * Error
+	SaslError(..), SaslErrorType(..) ) where
 
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.Error.Class
