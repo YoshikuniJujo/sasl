@@ -25,10 +25,7 @@ main = do
 		(stk, svk) = salt "password" slt i
 		(_, (_, p)) = sasl $ \"yoshikuni" -> return (slt, stk, svk, i)
 	r <- runPipe (fromFileLn clientFile =$= p =$= output =$= toHandleLn stdout)
-		`runStateT` St [
-			("snonce", "7658cddf-0e44-4de2-87df-4132bce97f4"),
-			("salt", "pepper"),
-			("i", "4492") ]
+		`runStateT` St [("snonce", "7658cddf-0e44-4de2-87df-4132bce97f4")]
 	print r
 
 output :: Pipe (Either Success BS.ByteString) BS.ByteString (StateT St IO) ()

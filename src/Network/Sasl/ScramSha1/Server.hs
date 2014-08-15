@@ -31,7 +31,7 @@ scramSha1Server :: (
 	(BSC.ByteString -> m (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
 		-> Server m
 scramSha1Server rt = Server
-	(Just clientFirst) [(serverFirst, clientFinal rt)] (Just $ serverFinal rt)
+	(Just clientFirst) [(serverFirst rt, clientFinal rt)] (Just $ serverFinal rt)
 
 clientFirst :: (MonadState m, SaslState (StateType m)) => Receive m
 clientFirst rs = do
@@ -42,15 +42,18 @@ clientFirst rs = do
 		("username", un),
 		("cnonce", cnnc) ] ++ st
 
-serverFirst :: (MonadState m, SaslState (StateType m)) => Send m
-serverFirst = do
+serverFirst :: (MonadState m, SaslState (StateType m)) =>
+	(BSC.ByteString -> m (BSC.ByteString, BSC.ByteString, BSC.ByteString, Int))
+		-> Send m
+serverFirst rt = do
 	st <- gets getSaslState
-	let	Just cnnc = lookup "cnonce" st
+	let	Just un = lookup "username" st
+		Just cnnc = lookup "cnonce" st
 		Just snnc = lookup "snonce" st
-		Just slt = lookup "salt" st
-		Just i = lookup "i" st
-		sfm = serverFirstMessage
-			(cnnc `BSC.append` snnc) slt (read $ BSC.unpack i)
+--		Just slt = lookup "salt" st
+--		Just i = lookup "i" st
+	(slt, _, _, i) <- rt un
+	let	sfm = serverFirstMessage (cnnc `BSC.append` snnc) slt i
 	modify . putSaslState $ ("server-first-message", sfm) : st
 	return sfm
 

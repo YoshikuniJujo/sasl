@@ -14,10 +14,120 @@ license-file:	LICENSE
 category:	Network
 synopsis:	SASL implementation using simple-pipe
 description:
+    Example programs
+    .
+    SCRAM-SHA-1 Client sample
+    .
+    scramSha1sv.txt
+    .
+    > r=00DEADBEEF007658cddf-0e44-4de2-87df-4132bce97f4,s=cGVwcGVy,i=4492
+    > v=q0+IZgUtQTHYItaurlNyET1imLI=
+    > success
+    .
+    examples/clientS.hs
+    .
+    extensions
+    .
+    * OverloadedStrings
+    .
+    * PackageImports
+    .
+    > import "monads-tf" Control.Monad.State
+    > import Data.Pipe
+    > import Data.Pipe.ByteString
+    > import System.IO
+    > import Network.Sasl
+    > import Network.Sasl.ScramSha1.Client
+    >
+    > import qualified Data.ByteString as BS
+    >
+    > data St = St [(BS.ByteString, BS.ByteString)] deriving Show
+    > 
+    > instance SaslState St where
+    > 	getSaslState (St s) = s
+    > 	putSaslState s _ = St s
+    >
+    > serverFile :: String
+    > serverFile = "examples/scramSha1sv.txt"
+    >
+    > main :: IO ()
+    > main = do
+    > 	let	(_, (_, p)) = sasl
+    > 	r <- runPipe (fromFileLn serverFile =$= input =$= p =$= toHandleLn stdout)
+    > 		`runStateT` St [
+    > 			("username", "yoshikuni"),
+    > 			("password", "password"),
+    > 			("cnonce", "00DEADBEEF00") ]
+    > 	print r
+    >
+    > input :: Pipe BS.ByteString (Either Success BS.ByteString) (StateT St IO) ()
+    > input = await >>= \mbs -> case mbs of
+    > 	Just "success" -> yield . Left $ Success Nothing
+    > 	Just ch -> yield (Right ch) >> input
+    > 	_ -> return ()
+    .
+    SCRAM-SHA-1 Server sample
+    .
+    scramSha1cl.txt
+    .
+    > n,,n=yoshikuni,r=00DEADBEEF00
+    > c=biws,r=00DEADBEEF007658cddf-0e44-4de2-87df-4132bce97f4,p=zup7ghwpAW43cP4Xu3YZTNnHo0g=
+    >
+    .
+    examples/serverS.hs
+    .
+    extensions
+    .
+    * OverloadedStrings
+    .
+    * PackageImports
+    .
+    > import "monads-tf" Control.Monad.State
+    > import Data.Pipe
+    > import Data.Pipe.ByteString
+    > import System.IO
+    > import Network.Sasl
+    > import Network.Sasl.ScramSha1.Server
+    >
+    > import qualified Data.ByteString as BS
+    >
+    > data St = St [(BS.ByteString, BS.ByteString)] deriving Show
+    >
+    > instance SaslState St where
+    > 	getSaslState (St s) = s
+    > 	putSaslState s _ = St s
+    >
+    > clientFile :: String
+    > clientFile = "examples/scramSha1cl.txt"
+    >
+    > main :: IO ()
+    > main = do
+    > 	let	slt = "pepper"
+    > 		i = 4492
+    > 		(stk, svk) = salt "password" slt i
+    > 		(_, (_, p)) = sasl $ \"yoshikuni" -> return (slt, stk, svk, i)
+    > 	r <- runPipe (fromFileLn clientFile =$= p =$= output =$= toHandleLn stdout)
+    > 		`runStateT` St [("snonce", "7658cddf-0e44-4de2-87df-4132bce97f4")]
+    > 	print r
+    >
+    > output :: Pipe (Either Success BS.ByteString) BS.ByteString (StateT St IO) ()
+    > output = await >>= \mch -> case mch of
+    > 	Just (Left (Success Nothing)) -> yield "success"
+    > 	Just (Left (Success (Just bs))) -> yield bs
+    > 	Just (Right bs) -> yield bs >> output
+    > 	_ -> return ()
+    .
+    See examples directory for more examples.
 
 extra-source-files:
-    examples/client.hs
-    examples/server.hs
+    examples/clientD.hs
+    examples/serverD.hs
+    examples/clientS.hs
+    examples/serverS.hs
+    examples/clientP.hs
+    examples/serverP.hs
+    examples/clientE.hs
+    examples/serverE.hs
 
 source-repository	head
     type:	git
