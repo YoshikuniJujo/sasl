@@ -1,6 +1,7 @@
-{-# LANGUAGE OverloadedStrings, PackageImports #-}
+{-# LANGUAGE OverloadedStrings, FlexibleContexts, PackageImports #-}
 
 import "monads-tf" Control.Monad.State
+import "monads-tf" Control.Monad.Error
 import Data.Pipe
 import Data.Pipe.ByteString
 import Network.Sasl
@@ -20,14 +21,16 @@ clientFile = "examples/plainCl.txt"
 
 main :: IO ()
 main = do
-	let (_, (_, p)) = sasl $ \"" "yoshikuni" "password" -> return True
+	let (_, (_, p)) = sasl check
 	r <- runPipe (fromFileLn clientFile =$= p =$= output =$= toHandleLn stdout)
 		`runStateT` St []
 	print r
 
-check :: BS.ByteString -> BS.ByteString -> BS.ByteString -> Bool
-check "" "yoshikuni" "password" = True
-check _ _ _ = False
+check :: (Monad m, MonadError m, SaslError (ErrorType m)) =>
+	BS.ByteString -> BS.ByteString -> BS.ByteString -> m ()
+check "" "yoshikuni" "password" = return ()
+check _ _ _ = throwError $
+	fromSaslError NotAuthorized "incorrect username or password"
 
 output :: Pipe (Either Success BS.ByteString) BS.ByteString (StateT St IO) ()
 output = await >>= \mch -> case mch of

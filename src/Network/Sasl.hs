@@ -11,6 +11,7 @@ import Data.Maybe
 import Data.Pipe
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 
 class SaslState s where
 	getSaslState :: s -> [(BS.ByteString, BS.ByteString)]
@@ -40,10 +41,10 @@ data SaslErrorType
 	deriving Show
 
 class Error e => SaslError e where
-	fromSaslError :: (SaslErrorType, BS.ByteString) -> e
+	fromSaslError :: SaslErrorType -> BS.ByteString -> e
 
 instance SaslError IOError where
-	fromSaslError = strMsg . show
+	fromSaslError et em = strMsg $ show et ++ ":" ++ BSC.unpack em
 
 server :: Monad m =>
 	Server m -> (Bool, Pipe BS.ByteString (Either Success BS.ByteString) m ())
