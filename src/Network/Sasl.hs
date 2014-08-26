@@ -18,6 +18,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
 
 class SaslState s where
+	initSaslState :: s
 	getSaslState :: s -> [(BS.ByteString, BS.ByteString)]
 	putSaslState :: [(BS.ByteString, BS.ByteString)] -> s -> s
 
